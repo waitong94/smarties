@@ -1,6 +1,6 @@
 CXX=mpic++
 ifneq ($(wildcard ${SMARTIES_ROOT}/extern/.*),)
-CXX=${SMARTIES_ROOT}/extern/bin/mpic++
+CXX=/opt/ohpc/pub/compiler/intel-18/compilers_and_libraries_2018.2.199/linux/mpi/intel64/bin/mpicxx
 endif
 
 #LDFLAGS+= -fopenmp

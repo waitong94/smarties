@@ -30,7 +30,8 @@ bOwnArgv(true)
   }
   argv[argc] = nullptr;
 
-  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, & threadSafety);
+//  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, & threadSafety);
+  MPI_Init(&argc, &argv);
   world_comm = MPI_COMM_WORLD;
   MPI_Comm_set_errhandler(world_comm, MPI_ERRORS_RETURN);
   commonInit();
@@ -39,7 +40,8 @@ bOwnArgv(true)
 ExecutionInfo::ExecutionInfo(int _argc, char ** _argv) :
   bOwnArgv(false), argc(_argc), argv(_argv)
 {
-  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, & threadSafety);
+//  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, & threadSafety);
+  MPI_Init(&argc, &argv);
   world_comm = MPI_COMM_WORLD;
   MPI_Comm_set_errhandler(world_comm, MPI_ERRORS_RETURN);
   commonInit();
@@ -58,12 +60,12 @@ void ExecutionInfo::commonInit()
 {
   Warnings::init_warnings();
   getcwd(initial_runDir, 1024);
-  #ifdef REQUIRE_MPI_MULTIPLE
-  if (threadSafety < MPI_THREAD_MULTIPLE)
-  #else
-  if (threadSafety < MPI_THREAD_SERIALIZED)
-  #endif
-    die("The MPI implementation does not have required thread support");
+//  #ifdef REQUIRE_MPI_MULTIPLE
+//  if (threadSafety < MPI_THREAD_MULTIPLE)
+//  #else
+//  if (threadSafety < MPI_THREAD_SERIALIZED)
+//  #endif
+//    die("The MPI implementation does not have required thread support");
   // this value will determine if we can use asynchronous mpi calls:
   bAsyncMPI = threadSafety >= MPI_THREAD_MULTIPLE;
   world_size = MPICommSize(world_comm);

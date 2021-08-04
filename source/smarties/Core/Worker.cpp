@@ -69,15 +69,16 @@ void Worker::runTraining()
   {
     if(isTrainingStarted==0 && learn_rank==0) {
       const auto nCollected = learners[firstLearnerStart]->locDataSetSize();
+        printf("\rCollected %d of %d.     \n", (int) nCollected, (int) minNdataB4Train);
       const int perc = nCollected * 100.0/(Real) minNdataB4Train;
       if(nCollected >= minNdataB4Train) {
         isTrainingStarted = 1;
         printf("\rCollected all data required to begin training.     \n");
-        fflush(0);
+//        fflush(0);
       } else if(perc >= percentageReady+5) {
         percentageReady = perc;
-        printf("\rCollected %d%% of data required to begin training. ", perc);
-        fflush(0);
+        printf("\rCollected %d%% of data required to begin training. \n", perc);
+//        fflush(0);
       }
     }
     if(isTrainingStarted==0) return false;
@@ -86,6 +87,8 @@ void Worker::runTraining()
     const Real factor = learners.size()==1? 1.0/ENV.nAgentsPerEnvironment : 1;
     for(const auto& L : learners)
       over = over && L->nLocTimeStepsTrain() * factor >= distrib.nTrainSteps;
+    if(over)
+        printf("\r Smarties::Is over training \n");
     return over;
   };
   const std::function<bool()> isOverTesting = [&] ()
@@ -105,8 +108,9 @@ void Worker::runTraining()
       percentageReady = perc;
       printf("\rCollected %d environment episodes out of %u to evaluate " \
         " restarted policies.", (int)nEnvSeqs, (unsigned)distrib.nEvalEpisodes);
-      fflush(0);
+//      fflush(0);
     }
+
     return false;
   };
 
@@ -115,6 +119,7 @@ void Worker::runTraining()
   //////////////////////////////////////////////////////////////////////////////
   /////////////////////////// START DATA COLLECTION ////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
+  printf("\rSmarties::Worker::Start Data Collection");
   std::atomic<Uint> bDataCoordRunning {1};
   std::thread dataCoordProcess;
 
@@ -131,7 +136,8 @@ void Worker::runTraining()
   //////////////////////////////////////////////////////////////////////////////
   /////////////////////////////// TRAINING LOOP ////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
-  while(1) {
+    printf("\rSmarties::Worker::Start Training Loop");
+    while(1) {
     algoTasks.run();
     if ( isOver() ) break;
   }
