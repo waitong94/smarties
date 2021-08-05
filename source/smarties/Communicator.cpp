@@ -310,6 +310,11 @@ int Communicator::recvDiscreteAction(const int agentID) const
   return (int) agents[agentID]->getDiscreteAction();
 }
 
+const MPI_Comm& Communicator::get_envAppComm() {
+    assert(worker not_eq nullptr);
+    return worker->get_envAppComm();
+}
+
 void Communicator::synchronizeEnvironments()
 {
   if ( ENV.bFinalized ) return;

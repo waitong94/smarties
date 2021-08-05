@@ -36,6 +36,8 @@ public:
 
   void run(const environment_callback_t & callback);
 
+  const MPI_Comm& get_envAppComm(){return envAppComm;};
+
 protected:
   ExecutionInfo& distrib;
   TaskQueue dataTasks, algoTasks;
