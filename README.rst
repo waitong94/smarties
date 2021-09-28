@@ -330,7 +330,7 @@ The second argument when launching ``smarties`` is the settings file describing 
     
 - "minTotObsNum": Min number of transitions in training buffer before training starts. If minTotObsNum=0, is set equal to maxTotObsNum i.e. fill RM before training starts. Defaults to 0.
     
-- "obsPerStep": Ratio of observed *transitions* to gradient steps. E.g. 0.1 means that for every observation learner does 10 gradient steps. Defaults to 1.
+- "obsPerStep": Ratio of observed *transitions* to gradient steps. E.g. 0.1 means that for every observation learner does 10 gradient steps. Defaults to 1. For PPO: nEpochs = batchSize/obsPerStep
     
 |
 
