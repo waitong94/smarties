@@ -69,16 +69,16 @@ void Worker::runTraining()
   {
     if(isTrainingStarted==0 && learn_rank==0) {
       const auto nCollected = learners[firstLearnerStart]->locDataSetSize();
-        printf("\rCollected %d of %d.     \n", (int) nCollected, (int) minNdataB4Train);
+//        printf("\rCollected %d of %d.", (int) nCollected, (int) minNdataB4Train);
       const int perc = nCollected * 100.0/(Real) minNdataB4Train;
       if(nCollected >= minNdataB4Train) {
         isTrainingStarted = 1;
-        printf("\rCollected all data required to begin training.     \n");
-//        fflush(0);
+        printf("\rCollected all data required to begin training. \n");
+        fflush(0);
       } else if(perc >= percentageReady+5) {
         percentageReady = perc;
-        printf("\rCollected %d%% of data required to begin training. \n", perc);
-//        fflush(0);
+        printf("\rCollected %d%% of data required to begin training.", perc);
+        fflush(0);
       }
     }
     if(isTrainingStarted==0) return false;
