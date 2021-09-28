@@ -1,0 +1,15 @@
+{
+  "learner": "PPO",
+  "batchSize": 32,
+  "clipImpWeight": 0.2,
+  "encoderLayerSizes": [64],
+  "epsAnneal": 0,
+  "gamma": 0.995,
+  "lambda": 0.97,
+  "obsPerStep": 6,
+  "learnrate": 0.001,
+  "maxTotObsNum": 96,
+  "nnLayerSizes": [64],
+  "klDivConstraint": 0.01
+}
+

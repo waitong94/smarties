@@ -154,6 +154,8 @@ int ExecutionInfo::parse()
     "the terminal and print it to file."
   );
 
+
+
   try {
     parser.parse(argc, argv);
   }
@@ -162,7 +164,7 @@ int ExecutionInfo::parse()
       parser.exit(e);
       const std::string jsonArgs = HyperParameters::printArgComments();
       printf("\nAlgorithm-specific arguments read from .json files:\n%s\n",
-        jsonArgs.c_str());
+           jsonArgs.c_str());
       return 1;
     }
     else return 1;

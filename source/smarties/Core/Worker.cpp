@@ -221,14 +221,18 @@ bool Worker::learnersBlockingDataAcquisition() const
   return lock;
 }
 
+//WTChung : There is an issue here that is stopping the use of settings.json
+//Currently Hyperparameters are now fixed in HyperParameters.h TODO Fix
 void Worker::synchronizeEnvironments()
 {
   // here cannot use the recurring template because behavior changes slightly:
   const std::function<void(void*, size_t)> recvBuffer =
     [&](void* buffer, size_t size)
   {
+//      printf("RECV::AssertSize", int(size));
     assert(size>0);
     bool received = false;
+//      printf("RECV::ClientSize", int(COMM->SOCK.clients.size()));
     if( COMM->SOCK.clients.size() > 0 ) { // master with apps connected through sockets (on the same compute node)
       SOCKET_Brecv(buffer, size, COMM->SOCK.clients[0]);
       received = true;
@@ -240,57 +244,86 @@ void Worker::synchronizeEnvironments()
       }
     }
 
-    if(master_workers_comm not_eq MPI_COMM_NULL)
+//      printf("RECV::MPI 1\n");
+
+      if(master_workers_comm not_eq MPI_COMM_NULL)
     if( MPICommSize(master_workers_comm) >  1 &&
         MPICommRank(master_workers_comm) == 0 ) {
-      if(received) die("Sockets and MPI workers: should be impossible");
-      MPI_Recv(buffer, size, MPI_BYTE, 1, 368637, master_workers_comm, MPI_STATUS_IGNORE);
+      if(received) {
+//          printf("RECV::Sockets and MPI workers: should be impossible\n");
+          die("Sockets and MPI workers: should be impossible");
+      }
+//        printf("RECV::Start MPI_Recv\n");
+
+        MPI_Recv(buffer, size, MPI_BYTE, 1, 368637, master_workers_comm, MPI_STATUS_IGNORE);
       received = true;
-      // size of comm is number of workers plus master:
+//        printf("RECV::Fin MPI_Recv\n");
+
+        // size of comm is number of workers plus master:
       for(Uint i=2; i < MPICommSize(master_workers_comm); ++i) {
         void * const testbuf = malloc(size);
-        MPI_Recv(testbuf, size, MPI_BYTE, i, 368637, master_workers_comm, MPI_STATUS_IGNORE);
+//          printf("RECV::Start MPI_Recv testbuf\n");
+
+          MPI_Recv(testbuf, size, MPI_BYTE, i, 368637, master_workers_comm, MPI_STATUS_IGNORE);
         const int err = memcmp(testbuf, buffer, size); free(testbuf);
-        if(err) die(" error: mismatch");
+//          printf("RECV::Fin MPI_Recv testbuf\n");
+
+          if(err){
+//            printf("RECV::error: mismatch\"\n");
+            die(" error: mismatch");
+        }
       }
     }
-
-    if(master_workers_comm not_eq MPI_COMM_NULL)
+//      printf("RECV::MPI 2");
+      if(master_workers_comm not_eq MPI_COMM_NULL)
     if( MPICommSize(master_workers_comm) >  1 &&
         MPICommRank(master_workers_comm) >  0 ) {
       MPI_Send(buffer, size, MPI_BYTE, 0, 368637, master_workers_comm);
     }
 
-    if(workerless_masters_comm == MPI_COMM_NULL) return;
-    assert( MPICommSize(workerless_masters_comm) >  1 );
+//      printf("RECV::MPI 3");
 
+      if(workerless_masters_comm == MPI_COMM_NULL) return;
+//      printf("RECV::MPICommRank(workerless_masters_comm) size", int(MPICommSize(workerless_masters_comm)) );
+
+      assert( MPICommSize(workerless_masters_comm) >  1 );
     if( MPICommRank(workerless_masters_comm) == 0 ) {
       if(not received) die("rank 0 of workerless masters comm has no worker");
       for(Uint i=1; i < MPICommSize(workerless_masters_comm); ++i)
         MPI_Send(buffer, size, MPI_BYTE, i, 368637, workerless_masters_comm);
     }
+      printf("RECV::Finish MPI_SEND");
 
-    if( MPICommRank(workerless_masters_comm) >  0 ) {
+      if( MPICommRank(workerless_masters_comm) >  0 ) {
       if(received) die("rank >0 of workerless masters comm owns workers");
       MPI_Recv(buffer, size, MPI_BYTE, 0, 368637, workerless_masters_comm, MPI_STATUS_IGNORE);
     }
+      printf("RECV::Finish MPI_RECEIVE");
+
   };
 
+
+  printf("Sync Environments");
   ENV.synchronizeEnvironments(recvBuffer, distrib.nOwnedEnvironments);
+    printf("Finished Sync Environments");
 
   for(Uint i=0; i<ENV.nAgents; ++i) {
     COMM->initOneCommunicationBuffer();
     agents[i]->initializeActionSampling( distrib.generators[0] );
   }
   distrib.nAgents = ENV.nAgents;
+    printf("nAgents= %d",int(ENV.nAgents));
 
   // return if this process should not host the learning algorithms
   if(not distrib.bIsMaster and not distrib.learnersOnWorkers) return;
+
 
   const Uint nAlgorithms =
     ENV.bAgentsHaveSeparateMDPdescriptors? ENV.nAgentsPerEnvironment : 1;
   distrib.nOwnedAgentsPerAlgo =
     distrib.nOwnedEnvironments * ENV.nAgentsPerEnvironment / nAlgorithms;
+
+    printf("nAlgorithms = %d",int(nAlgorithms));
   learners.reserve(nAlgorithms);
   for(Uint i = 0; i<nAlgorithms; ++i)
   {

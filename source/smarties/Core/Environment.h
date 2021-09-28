@@ -43,12 +43,14 @@ struct Environment
     const std::function<void(void*, size_t)>& sendRecvFunc,
     const Uint nCallingEnvironments = 1)
   {
+      printf("ENV::CheckFinalized = %d",int(bFinalized));
     if(bFinalized) die("Cannot synchronize env description multiple times");
     bFinalized = true;
-
+      printf("ENV::Finish CheckFinalized = %d",int(bFinalized));
     sendRecvFunc(&nAgentsPerEnvironment, 1 * sizeof(Uint) );
-    sendRecvFunc(&bAgentsHaveSeparateMDPdescriptors, 1 * sizeof(bool) );
-
+      printf("ENV::Finish Send nAgentsPerEnvironment");
+      sendRecvFunc(&bAgentsHaveSeparateMDPdescriptors, 1 * sizeof(bool) );
+      printf("ENV::Finish Send separatemdp");
     //sendRecvFunc(&nMPIranksPerEnvironment, 1 * sizeof(Uint) );
     //if(nMPIranksPerEnvironment <= 0) {
     //  warn("Overriding nMPIranksPerEnvironment -> 1");
@@ -56,16 +58,23 @@ struct Environment
     //}
 
     bTrainFromAgentData.resize(nAgentsPerEnvironment, true);
-    sendRecvVectorFunc(sendRecvFunc, bTrainFromAgentData);
+      printf("ENV::Finish resize");
 
-    nAgents = nAgentsPerEnvironment * nCallingEnvironments;
+      sendRecvVectorFunc(sendRecvFunc, bTrainFromAgentData);
+      printf("ENV::Finish receive vector");
+
+      nAgents = nAgentsPerEnvironment * nCallingEnvironments;
     //assert(nCallingEnvironments>0);
-
+    printf("ENV::nAgents = %d",int(nAgents));
     initDescriptors(bAgentsHaveSeparateMDPdescriptors);
     const Uint nDescriptors = descriptors.size();
-    for(Uint i=0; i<nDescriptors; ++i) descriptors[i]->synchronize(sendRecvFunc);
+    printf("ENV::beginSync");
 
-    assert(agents.size() == 0);
+
+    for(Uint i=0; i<nDescriptors; ++i) descriptors[i]->synchronize(sendRecvFunc);
+      printf("ENV::endSync");
+
+      assert(agents.size() == 0);
     agents.clear();
     agents.reserve(nAgents);
     for(Uint i=0; i<nAgents; ++i)

@@ -21,6 +21,9 @@ HOSTNAME      = os.popen("hostname").read()
 def isEuler():
   return HOSTNAME[:5]=='euler' or HOSTNAME[:3]=='eu-'
 
+def isYellowStone():
+    return HOSTNAME[:5]=='compu' or HOSTNAME[:3]=='yel'
+
 def isDaint():
   return HOSTNAME[:5]=='daint'
 
@@ -36,6 +39,10 @@ def getDefaults():
     print('Detected CSCS cluster Piz Daint')
     runprefix = SCRATCH + '/smarties/'
     nThreads = 12
+  elif isYellowStone():
+    print('Detected Stanford Yellowstone')
+    runprefix =  SMARTIES_ROOT + '/runs/'
+    nThreads = 32 #TODO check this
   else:
     runprefix = SMARTIES_ROOT + '/runs/'
     nThreads = psutil.cpu_count(logical = False)
@@ -121,13 +128,14 @@ def applicationSetup(parsed, absRunPath):
   # elif is_exe(app):
   #   shutil.copy(app, absRunPath + '/exec')
   #   parsed.execname = 'exec'
+  elif is_exe(absRunPath+'/'+parsed.execname):
+    print('WARNING: Using executable already located in run directory.')
   elif is_exe(app+'/'+parsed.execname):
     shutil.copy(app+'/'+parsed.execname, absRunPath + '/')
   elif is_exe(app+'/'+parsed.execname+'.py'):
     shutil.copy(app+'/'+parsed.execname+'.py', absRunPath + '/')
     parsed.execname = parsed.execname + '.py'
-  elif is_exe(absRunPath+'/'+parsed.execname):
-    print('WARNING: Using executable already located in run directory.')
+
   elif is_exe(absRunPath+'/'+parsed.execname+'.py'):
     print('WARNING: Using python executable already located in run directory.')
     parsed.execname = parsed.execname + '.py'
@@ -284,6 +292,31 @@ def setLaunchCommand(parsed, absRunPath):
     nTaskPerNode, nNodes = parsed.nTaskPerNode, nProcesses / parsed.nTaskPerNode
     cmd = "srun -C gpu -u -p debug -n %d --nodes %d --ntasks-per-node %d ./%s %s" \
           % (nProcesses, nNodes, nTaskPerNode, parsed.execname, parsed.args)
+
+  elif isYellowStone(): # and parsed.interactive is False:
+      nNodes = round(nProcesses / nThreads)
+      f = open(absRunPath + '/yell_sbatch','w')
+      f.write('#!/bin/bash -l \n')
+      f.write('#SBATCH --job-name=%s \n' % rundir)
+      if parsed.debug:
+          f.write('#SBATCH --time=00:30:00 \n')
+          # f.write('#SBATCH --partition=debug \n')
+      else:
+          f.write('#SBATCH --time=%s:00:00 \n' % clockHours)
+      f.write('#SBATCH --partition=compute \n')
+      f.write('#SBATCH --output=%s_out_%%j.txt \n' % rundir)
+      f.write('#SBATCH -N %d \n' % nNodes)
+      f.write('#SBATCH -n %d \n' % nProcesses) #TODO write this
+      f.write('#SBATCH --mail-type=ALL \n')       # mail alert
+      f.write('#SBATCH --mail-user=wtchung@stanford.edu \n') # replace [sunetid] with your SUNetID
+      f.write('echo "Running [your app] with: $cmd on $SLURM_JOB_NODELIST in directory "`pwd` \n')
+      f.write("WORKDIR='/home/ihme/wtchung/13A_VignatCoarse' \n")
+      f.write("cd $WORKDIR \n")
+      f.write("mpiexec -np=%d $WORKDIR/%s %s >& $WORKDIR/log_$SLURM_JOBID \n" \
+              % (nProcesses,  parsed.execname,parsed.args))
+
+      f.close()
+      cmd = "chmod 755 yell_sbatch \n sbatch yell_sbatch"
   return cmd
 
 if __name__ == '__main__':
@@ -310,7 +343,7 @@ if __name__ == '__main__':
            '    The default value is \'./\' and smarties will look for a binary '
            '    or Python executable in the current directory.')
 
-  parser.add_argument('settings', default=['VRACER.json'], nargs='*',
+  parser.add_argument('--settings', default=['VRACER.json'], nargs='*',
       help="path or name of the settings file specifying RL solver " \
            "and its hyper-parameters. The default setting file is set to VRACER.json")
 
@@ -417,7 +450,8 @@ if __name__ == '__main__':
                  executable=parsed.shell, shell=True)
   subprocess.run("cd ${SMARTIES_ROOT} && git diff       > ${RUNDIR}/gitdiff.log", \
                  executable=parsed.shell, shell=True)
-
+  print("Absrunpath: " + absRunPath)
+  print("Exec: " + parsed.execname)
   assert is_exe(absRunPath+'/'+parsed.execname), "FATAL: application not found"
 
   cmd = 'cd ${RUNDIR} \n'

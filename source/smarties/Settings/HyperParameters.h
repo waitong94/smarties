@@ -34,38 +34,38 @@ struct HyperParameters
   //////////////////////////////////////////////////////////////////////////////
   //SETTINGS PERTAINING TO LEARNING ALGORITHM
   //////////////////////////////////////////////////////////////////////////////
-  std::string learner = "VRACER";
+  std::string learner ="PPO";// "VRACER";
   std::string ERoldSeqFilter = "oldest";
   std::string dataSamplingAlgo = "uniform";
   std::string returnsEstimator = "default";
 
   Real explNoise = std::sqrt(0.2);
   Real gamma = 0.995;
-  Real lambda = 1;
-  Real obsPerStep = 1;
-  Real clipImpWeight = std::sqrt(dimA / 2.0);
+  Real lambda = 0.97;//1;
+  Real obsPerStep = 6;//1;
+  Real clipImpWeight = 0.2;//std::sqrt(dimA / 2.0);
   Real penalTol = 0.1;
   Real klDivConstraint = 0.01;
   Real targetDelay = 0;
-  Real epsAnneal = 5e-7;
+  Real epsAnneal = 0;//5e-7;
 
   Uint minTotObsNum = 0;
-  Uint maxTotObsNum = std::pow(2, 14) * std::sqrt(dimA + dimS);
-  Uint saveFreq = 50000;
+  Uint maxTotObsNum = 96;//std::pow(2, 14) * std::sqrt(dimA + dimS);
+  Uint saveFreq = 100;
 
   //////////////////////////////////////////////////////////////////////////////
   //SETTINGS PERTAINING TO NETWORK
   //////////////////////////////////////////////////////////////////////////////
 
-  std::vector<Uint> encoderLayerSizes = { 0 };
-  std::vector<Uint> nnLayerSizes = { 128, 128 };
+  std::vector<Uint> encoderLayerSizes = { 64};//{ 0 };
+  std::vector<Uint> nnLayerSizes = { 64}; //{ 128, 128 };
 
-  Uint batchSize = 256;
+  Uint batchSize = 32;//256;
   Uint ESpopSize = 1;
   Uint nnBPTTseq = 16;
 
   Real nnLambda = std::numeric_limits<float>::epsilon();
-  Real learnrate = 1e-4;
+  Real learnrate = 1e-3;//1e-4;
   Real outWeightsPrefac = 1e-3;
 
   std::string nnOutputFunc = "Linear";
